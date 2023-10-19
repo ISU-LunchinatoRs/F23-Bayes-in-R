@@ -1,0 +1,87 @@
+---
+title: "Bayes in R"
+author: "Jarad Niemi"
+format: 
+  revealjs: 
+    embed-resources: true
+execute:
+  echo: true
+---
+
+## Bayesian Statistcs in R
+
+- Learning Bayes
+- Specific models
+- General modeling
+
+
+# Learning Bayes
+
+## What is Bayesian Statistics
+
+Bayesian statistics is a coherent framework for learning about the world from
+data. 
+$$p(\theta|y) \propto p(y|\theta)p(\theta)$$
+where
+
+- $p(\theta)$ is your prior (belief)
+- $p(y|\theta)$ is the data model
+- $p(\theta|y)$ is your posterior (belief)
+
+
+## STAT 574: Introduction to Bayesian Data Analysis
+
+> Probability models and prior distributions; updating priors through the likelihood function. Computational and simulation-based methods for deriving posterior distributions and for estimating parameters. Basic statistical and hierarchical models. Model adequacy and posterior predictive checks. Markov Chain Monte Carlo methods and introduction to WinBUGS or similar software. Emphasis on applications and examples from the social, biological and physical sciences. 
+
+Prereq: (STAT 301 or STAT 326 or STAT 401 or STAT 587); (STAT 341 or STAT 347 or STAT 447 or STAT 588)
+
+## Books
+
+[My list of textbooks for STAT 544 students](https://www.jarad.me/courses/stat544/textbook.html):
+
+- Bayesian Data Analysis 
+- Doing Bayesian Data Analysis (used for STAT 574)
+- A First Course in Bayesian Statistical Methods
+- Bayesian Computation with R (Jim Albert)
+
+
+## LearnBayes
+
+```{r binomial-inference}
+library("LearnBayes")
+
+# From vignette("BinomialInference")
+# Informative prior
+# NBA players have three-point percentages between 
+beta.par <- beta.select(list(p=0.1, x=0.3), list(p=0.8, x=.4)) 
+beta.par # beta parameters
+
+# Bogdan Bogdanovic 2022-23 (from https://www.generatormix.com/current-nba-player-generator)
+attempts  <- 360 
+successes <- 146
+
+# Prior, Likelihood, and Posterior for Bogdan Bogdanovic
+triplot(beta.par, c(successes, attempts - successes))
+```
+
+## Binomial model (simpler)
+
+```{r binomial-inference2}
+# Posterior using a uniform prior
+curve(dbeta(x, 1 + successes, 1 + attempts - successes))
+
+# 95% Credible interval (and confidence interval)
+qbeta(c(.025, .975), 1 + successes, 1 + attempts - successes)
+```
+[Confidence interval for a binomial proportion](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Jeffreys_interval)
+
+# Specific models
+
+## Regression
+
+
+
+# General modeling
+
+
+
