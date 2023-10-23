@@ -17,6 +17,12 @@ execute:
 
 # Learning Bayes
 
+- What is Bayesian Statistics
+- STAT 574
+- Books
+- LearnBayes
+- Binomial analysis
+
 ## What is Bayesian Statistics
 
 Bayesian statistics is a coherent framework for learning about the world from
@@ -75,9 +81,36 @@ qbeta(c(.025, .975), 1 + successes, 1 + attempts - successes)
 ```
 [Confidence interval for a binomial proportion](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Jeffreys_interval)
 
+## Binomial probability comparison
+
+Does adding oxygen in sealed chambers compared to traditional germination boxes increase S. macrostachya germination?
+If yes, how much does it increase the probaiblity?
+$$Y_i \stackrel{ind}{\sim} Bin(n_i, \theta_i)$$?
+for $i=1,2$ (traditional vs oxygen).
+
+Calculate $P(\theta_2 > \theta|y_1,y_2)$:
+```{r}
+n <- 200; y1 <- 26 + 9; y2 <- 41 + 54 # attempts and successes
+theta2 <- rbeta(1e5, 1 + y2, 1 + n - y2)
+theta1 <- rbeta(1e5, 1 + y1, 1 + n - y1)
+
+mean(theta2 > theta1)
+round(quantile(theta2 - theta1, c(.025,.5,.975)), 2) * 100
+```
+
+
+
+
+
 # Specific models
 
+- Binomial analysis and comparison
+- Regression
+- Generalized linear models
+
 ## Regression
+
+## Generalized linear models
 
 
 
