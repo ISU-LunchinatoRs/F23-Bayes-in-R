@@ -81,21 +81,46 @@ qbeta(c(.025, .975), 1 + successes, 1 + attempts - successes)
 ```
 [Confidence interval for a binomial proportion](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Jeffreys_interval)
 
-## Binomial probability comparison
+## Binomial probability comparison in words
 
-Does adding oxygen in sealed chambers compared to traditional germination boxes increase S. macrostachya germination?
-If yes, how much does it increase the probaiblity?
-$$Y_i \stackrel{ind}{\sim} Bin(n_i, \theta_i)$$?
-for $i=1,2$ (traditional vs oxygen).
+Does [adding oxygen in sealed chambers compared to traditional germination boxes increase S. macrostachya germination](https://acsess.onlinelibrary.wiley.com/doi/abs/10.2135/cropsci2014.11.0783)?
+If yes, how much does it increase the probability?
 
-Calculate $P(\theta_2 > \theta|y_1,y_2)$:
+
+
+## Binomial probability comparison in math
+
+$$Y_i \stackrel{ind}{\sim} Bin(n_i, \theta_i), \quad i=1,2$$
+where $i=1$ is traditional and $i=2$ is added oxygen.
+Assume prior $p(\theta_1,\theta_2) \propto 1$. 
+
+Interest centers on 
+$$\delta = \theta_2 - \theta_1$$ 
+and we want to calculate
+
+- $P(\delta > 0 | y_1,y_2)$,
+- $\widehat\delta$, and
+- a credible interval for $\delta$.
+
+
+## Binomial probability comparison in code
+
 ```{r}
-n <- 200; y1 <- 26 + 9; y2 <- 41 + 54 # attempts and successes
+# data: attempts and successes
+n <- 200
+y1 <- 26 + 9
+y2 <- 41 + 54 
+
+# Monte Carlo simulation
 theta2 <- rbeta(1e5, 1 + y2, 1 + n - y2)
 theta1 <- rbeta(1e5, 1 + y1, 1 + n - y1)
+delta  <- theta2 - theta1
 
-mean(theta2 > theta1)
-round(quantile(theta2 - theta1, c(.025,.5,.975)), 2) * 100
+# Posterior probability delta > 0
+mean(delta > 0)                             
+
+# Point and interval estimates
+round(quantile(delta, c(.025,.5,.975)), 2) * 100 
 ```
 
 
@@ -138,7 +163,8 @@ Example code
 m <- lm(breaks ~ wool + tension, data = warpbreaks)
 summary(m)$coefficients
 confint(m)
-predict(m, newdata = data.frame(wool = "B", tension = "L"), interval = "prediction")
+predict(m, newdata = data.frame(wool = "B", tension = "L"), 
+        interval = "prediction")
 ```
 
 
@@ -155,6 +181,23 @@ Mixed: accommodates non-independence
 - Random (hierarchical/exchangeable)
 - Spatial
 - Temporal
+
+
+## arm
+
+The [arm](https://cran.r-project.org/web/packages/arm/index.html) package
+can fit generalized linear (non-mixed) models without MCMC.
+Logistic regression:
+
+```{r}
+library("arm")
+
+m <- bayesglm(LC == "LungCancer" ~ BK + YR, family = binomial(), 
+         data = Sleuth3::case2002)
+summary(m)
+```
+
+Output is very similar to `glm`. 
 
 ## rstanarm
 
@@ -183,7 +226,7 @@ summary(m)
 
 ```{r rstanarm-logistic, output=FALSE}
 m <- stan_glm(LC == "LungCancer" ~ YR + BK, 
-             # prior = R2(0.5), 
+             family = binomial(), 
              data = Sleuth3::case2002)
 ```
 
