@@ -104,14 +104,92 @@ round(quantile(theta2 - theta1, c(.025,.5,.975)), 2) * 100
 
 # Specific models
 
+- CRAN Bayesian Task View
 - Binomial analysis and comparison
 - Regression
 - Generalized linear models
 
-## Regression
+## CRAN Bayesian Task View
 
-## Generalized linear models
+The 
+[CRAN Bayesian Task View](https://cran.r-project.org/web/views/Bayesian.html)
+provides a collection of R packages that perform Bayesian analyses. 
 
+Maintained by [Jong Hee Park](https://scholar.google.com/citations?user=AtT80EsAAAAJ&hl=en),
+Professor, Depart of Political Science and International Relations, 
+Seoul National University.
+
+## Default Bayesian Regression 
+
+Every regression you have ever run is a Bayesian regression. 
+The default Bayesian regression model is 
+$$Y_i = \beta_0 + \beta_1 X_{i,1} + \cdots + \beta_P X_{i,P}, \quad
+\epsilon_i \stackrel{ind}{\sim} N(0,\sigma^2)$$
+with prior
+$$p(\beta,\sigma^2) \propto 1/\sigma^2.$$ 
+
+You can interpret confidence and prediction intervals from a Bayesian 
+perspective, e.g. your updated belief. 
+
+## Default Bayesian Regression - Code
+
+Example code
+```{r}
+m <- lm(breaks ~ wool + tension, data = warpbreaks)
+summary(m)$coefficients
+confint(m)
+predict(m, newdata = data.frame(wool = "B", tension = "L"), interval = "prediction")
+```
+
+
+## Generalized linear mixed models (GLMMs)
+
+Generalized: accommodates binary, count, and continuous data
+
+- Logistic regression
+- Poisson regression
+- Linear regression
+
+Mixed: accommodates non-independence
+
+- Random (hierarchical/exchangeable)
+- Spatial
+- Temporal
+
+## rstanarm
+
+The R package 
+[rstanarm](https://cran.r-project.org/web/packages/rstanarm/index.html)
+provides functionality for fitting many GLMMs (and other models) using 
+Stan. 
+
+
+## rstanarm - regression
+
+```{r rstanarm-lm, output=FALSE}
+library("rstanarm")
+m <- stan_lm(breaks ~ wool + tension, 
+             prior = R2(0.5), 
+             data = warpbreaks)
+
+```
+
+```{r, dependson="rstanarm-lm"}
+summary(m)
+```
+
+
+## rstanarm - logistic
+
+```{r rstanarm-logistic, output=FALSE}
+m <- stan_glm(LC == "LungCancer" ~ YR + BK, 
+             # prior = R2(0.5), 
+             data = Sleuth3::case2002)
+```
+
+```{r, dependson="rstanarm-logistic"}
+summary(m)
+```
 
 
 # General modeling
