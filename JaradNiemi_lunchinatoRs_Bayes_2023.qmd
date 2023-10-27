@@ -1,23 +1,34 @@
 ---
 title: "Bayes in R"
 author: "Jarad Niemi"
+
+project:
+  type: website
+  
 format: 
-  revealjs: 
+  html: 
     embed-resources: true
+    theme: cosmo
+    toc: true
+    
 execute:
   echo: true
+  cache: true
 ---
 
-## Bayesian Statistcs in R
+The following packages are required to run the code in this presentation.
+The `rstan` package may take 
+[a bit more work to install](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). 
 
-- Learning Bayes
-- Specific models
-- General modeling
+```{r packages, eval=FALSE}
+install.packages(c("tidyverse","LearnBayes","arm","rstanarm","rstan"))
+```
+
 
 
 # Learning Bayes
 
-- What is Bayesian Statistics
+- What is Bayesian Statistics?
 - STAT 574
 - Books
 - LearnBayes
@@ -56,7 +67,7 @@ Prereq: (STAT 301 or STAT 326 or STAT 401 or STAT 587); (STAT 341 or STAT 347 or
 ```{r binomial-inference}
 library("LearnBayes")
 
-# From vignette("BinomialInference")
+# Modified from vignette("BinomialInference")
 # Informative prior
 # NBA players have three-point percentages between 
 beta.par <- beta.select(list(p=0.1, x=0.3), list(p=0.8, x=.4)) 
@@ -69,6 +80,8 @@ successes <- 146
 # Prior, Likelihood, and Posterior for Bogdan Bogdanovic
 triplot(beta.par, c(successes, attempts - successes))
 ```
+
+
 
 ## Binomial model (simpler)
 
@@ -230,12 +243,106 @@ m <- stan_glm(LC == "LungCancer" ~ YR + BK,
              data = Sleuth3::case2002)
 ```
 
-```{r, dependson="rstanarm-logistic"}
+```{r rstanarm-logistic-summary, dependson="rstanarm-logistic"}
 summary(m)
 ```
 
 
 # General modeling
 
+Suppose you want to fit the following model
+
+$$Y_i \stackrel{ind}{\sim} Bin(n_i,\theta_i), \quad
+\theta_i \stackrel{ind}{\sim} Be(\eta\pi,\eta(1-\pi))$$
+with prior $\pi\sim Be(6, 14)$ and $\eta~sim Exp(0.05)$ independently. 
+
+## rstan
+
+`rstan` is an R interface to the 
+[Stan modeling software](https://mc-stan.org/)
+
+Set up the model
+
+```{r binomial-hierarchical-model}
+library("rstan")
+model_informative_prior = "
+data {
+  int<lower=0> N;    // data
+  int<lower=0> n[N];
+  int<lower=0> y[N];
+  real<lower=0> a;   // prior
+  real<lower=0> b;
+  real<lower=0> e;
+}
+parameters {
+  real<lower=0,upper=1> mu;
+  real<lower=0> eta;
+  real<lower=0,upper=1> theta[N];
+}
+transformed parameters {
+  real<lower=0> alpha;
+  real<lower=0> beta;
+
+  alpha = eta*   mu ;
+  beta  = eta*(1-mu);
+}
+model {
+  mu    ~ beta(a,b);
+  eta   ~ exponential(e);
+
+  // implicit joint distributions
+  theta ~ beta(alpha,beta);
+  y     ~ binomial(n,theta);
+}
+"
+```
+
+Stan uses the model written above to write C code. 
+This C code then needs to be compiled before you can run your model. 
+The code below will compile the model. 
+
+```{r rstan-binomial-hierarchical-compile, dependson="binomial-hierarchical-model"}
+m <- stan_model(model_code = model_informative_prior)
+```
+
+Once compiled the model can be used to run many data sets. 
+The following is Bogdan Bogdanovic's 3-point data from the 2017-18 
+season through the 2022-23 season. 
+The model says that Bogdanovic's 3-point percentage should be similar,
+but not necessarily exactly the same from season to season. 
+The hierarchical structure allows us to learn about how similar his 
+3-point percentage is from year to year as well as borrowing strength
+about his 3-point percentage across the years. 
+
+```{r rstan-binomial-hierarchical-run, dependson="rstan-binomial-hierarchical-compile", output=FALSE}
+d <- tibble::tribble(
+  ~made, ~attempts,
+  129, 329,
+  134, 372,
+  164, 441,
+  146, 333,
+  169, 459,
+  146, 360,
+  1, 5
+)
+
+dat <- list(y = d$made, n = d$attempts, N = nrow(d),
+            a = 6, b = 14, e = 0.05)
+
+r   <- sampling(m, dat, c("mu","eta","alpha","beta","theta"),
+             iter = 10000)
+```
+
+```{r rstan-binomial-hierarchical-print, dependson="stan-binomial-hierarchical-compile"}
+r
+```
+
+```{r rstan-binomial-hierarchical-plot-all, dependson="stan-binomial-hierarchical-compile"}
+plot(r)
+```
+
+```{r rstan-binomial-hierarchical-plot-theta, dependson="stan-binomial-hierarchical-compile"}
+plot(r, pars="theta")
+```
 
 
